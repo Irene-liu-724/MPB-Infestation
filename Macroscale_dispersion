@@ -46,9 +46,9 @@ sca_model <- function(x, alpha, beta, gamma1, gamma2, phi, rho, xi){ #x is a dat
   return(x_update)
 }
 #-------------------------------------------------------------------------------
-# Spreading process (directional dispersal)
+# Dispersion process (directional dispersion)
 # moving direction
-directional_move <- function(x, direction, dir_prob){
+directional_move <- function(x, direction, dir_prob){ #dir_prob prob of density dispersing to a certain direction
   avg_temp <- mean(x$density)
   avg_row <- mean(x$row)
   avg_col <- mean(x$col)
@@ -85,7 +85,7 @@ directional_move <- function(x, direction, dir_prob){
 
 
 #-------------------------------------------------------------------------------
-dispersal_process_dir <- function(x, direction, dir_prob, alpha, beta, gamma1, gamma2, phi, rho, xi){
+sca_model_dir <- function(x, direction, dir_prob, alpha, beta, gamma1, gamma2, phi, rho, xi){
   w <- incl_wgt(x)
   d <- density_rel_diff(x)
   dir_coef <- directional_move(x, direction = direction, dir_prob = dir_prob)
@@ -102,12 +102,12 @@ dispersal_process_dir <- function(x, direction, dir_prob, alpha, beta, gamma1, g
     x$index <- incl_index
     temp <- filter(x, index == 1) #only include certain cells
     avg <- mean(temp$density)
-    # contributing cells, lose population
+    # contributing cells, lose pop density
     temp_high <- temp[temp$density >= avg, ] 
-    # non-contributing cells, receive population
+    # non-contributing cells, receive pop density
     temp_low <- temp[temp$density < avg, ]
     N <- nrow(temp)
-    #population available to be redistributed
+    #pop density available to be redistributed
     pop_redistr <- gamma1 * sum(temp_high$density - avg)
     temp_low$density <- with(temp_low, density + gamma2 * pop_redistr / N)
     land_prob <- phi + rho * atan(xi * temp_low$density)
