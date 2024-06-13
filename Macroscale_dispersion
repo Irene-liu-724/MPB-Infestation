@@ -1,1 +1,131 @@
+# Dispersion process (uniform dispersion)
+#change the name of this function: SCA model
+sca_model <- function(x, alpha, beta, gamma1, gamma2, phi, rho, xi){
+  w <- incl_wgt(x)
+  d <- density_rel_diff(x)
+  incl_prob <- (w^alpha * d / (1 + w^alpha))^beta
+  incl_index <- vector()
+  land_index <- vector()
+  
+  for (i in seq_along(incl_prob)){
+    #flipping coin on cells
+    incl_index[i] <- rbinom(1, size = 1, prob = incl_prob[i])} 
+  
+  if (sum(incl_index) == 0) {x_update <- x  #if all 0s, no spreading
+  } else {
+    x$index <- incl_index
+    temp <- filter(x, index == 1) #only include certain cells
+    avg <- mean(temp$density)
+    # contributing cells, lose population
+    temp_high <- temp[temp$density >= avg, ] 
+    # non-contributing cells, receive population
+    temp_low <- temp[temp$density < avg, ]
+    N <- nrow(temp)
+    #population available to be redistributed
+    pop_redistr <- gamma1 * sum(temp_high$density - avg)
+    temp_low$density <- with(temp_low, density + gamma2 * pop_redistr / N)
+    land_prob <- phi + rho * atan(xi * temp_low$density)
+    for (h in seq_along(land_prob)){
+      land_index[h] <- rbinom(1, size = 1, prob = land_prob[h])
+    }
+    temp_low$land <- land_index
+    temp_low$density <- ifelse(temp_low$land == 0, 0, temp_low$density)
+    temp_low <- select(temp_low, -land)
+    temp_high$density <- with(temp_high, 
+                              density - gamma1 * (density - avg) + pop_redistr / N)
+    #updated cell density
+    temp_update <- rbind(temp_high, temp_low)
+    x_update_ <- temp_update %>% select(-index) %>% arrange(row, col)
+    x_update <- merge(x, x_update_, all.x = TRUE, by = c("row", "col"))
+    x_update$density <- with(x_update,
+                             ifelse(is.na(density.y)==FALSE, density.y, density.x))
+    
+  }
+  x_update <- x_update %>% select(row, col, density)
+  return(x_update)
+}
+#-------------------------------------------------------------------------------
+# Spreading process (directional dispersal)
+# moving direction
+directional_move <- function(x, direction, dir_prob){
+  avg_temp <- mean(x$density)
+  avg_row <- mean(x$row)
+  avg_col <- mean(x$col)
+  
+  if (direction == "NA"){
+    dir_coef <- rep(1, nrow(x))
+  }
+  if (direction =="East"){
+    dir_coef <- ifelse(x$density < avg_temp & x$col < avg_col, dir_prob, 1)
+  }
+  if (direction =="West"){
+    dir_coef <- ifelse(x$density < avg_temp & x$col > avg_col, dir_prob, 1)
+  }
+  if (direction =="North"){
+    dir_coef <- ifelse(x$density < avg_temp & x$row < avg_row, dir_prob, 1)
+  }
+  if (direction =="South"){
+    dir_coef <- ifelse(x$density < avg_temp & x$row > avg_row, dir_prob, 1)
+  }  
+  if (direction =="Northeast"){
+    dir_coef <- ifelse(x$density < avg_temp & x$col < avg_col & x$row < avg_row, dir_prob, 1)
+  }
+  if (direction =="Northwest"){
+    dir_coef <- ifelse(x$density < avg_temp & x$col > avg_col & x$row < avg_row, dir_prob, 1)
+  }  
+  if (direction =="Southeast"){
+    dir_coef <- ifelse(x$density < avg_temp & x$col < avg_col & x$row > avg_row, dir_prob, 1)
+  }
+  if (direction =="Southwest"){
+    dir_coef <- ifelse(x$density < avg_temp & x$col > avg_col & x$row > avg_row, dir_prob, 1)
+  }   
+  return(dir_coef)  
+}
 
+
+#-------------------------------------------------------------------------------
+dispersal_process_dir <- function(x, direction, dir_prob, alpha, beta, gamma1, gamma2, phi, rho, xi){
+  w <- incl_wgt(x)
+  d <- density_rel_diff(x)
+  dir_coef <- directional_move(x, direction = direction, dir_prob = dir_prob)
+  incl_prob <- (w^alpha * d / (1 + w^alpha))^beta * dir_coef
+  incl_index <- vector()
+  land_index <- vector()
+  
+  for (i in seq_along(incl_prob)){
+    #flipping coin on cells
+    incl_index[i] <- rbinom(1, size = 1, prob = incl_prob[i])} 
+  
+  if (sum(incl_index) == 0) {x_update <- x  #if all 0s, no spreading
+  } else {
+    x$index <- incl_index
+    temp <- filter(x, index == 1) #only include certain cells
+    avg <- mean(temp$density)
+    # contributing cells, lose population
+    temp_high <- temp[temp$density >= avg, ] 
+    # non-contributing cells, receive population
+    temp_low <- temp[temp$density < avg, ]
+    N <- nrow(temp)
+    #population available to be redistributed
+    pop_redistr <- gamma1 * sum(temp_high$density - avg)
+    temp_low$density <- with(temp_low, density + gamma2 * pop_redistr / N)
+    land_prob <- phi + rho * atan(xi * temp_low$density)
+    for (h in seq_along(land_prob)){
+      land_index[h] <- rbinom(1, size = 1, prob = land_prob[h])
+    }
+    temp_low$land <- land_index
+    temp_low$density <- ifelse(temp_low$land == 0, 0, temp_low$density)
+    temp_low <- select(temp_low, -land)
+    temp_high$density <- with(temp_high, 
+                              density - gamma1 * (density - avg) + pop_redistr / N)
+    #updated cell density
+    temp_update <- rbind(temp_high, temp_low)
+    x_update_ <- temp_update %>% select(-index) %>% arrange(row, col)
+    x_update <- merge(x, x_update_, all.x = TRUE, by = c("row", "col"))
+    x_update$density <- with(x_update,
+                             ifelse(is.na(density.y)==FALSE, density.y, density.x))
+    
+  }
+  x_update <- x_update %>% select(row, col, density)
+  return(x_update)
+}
