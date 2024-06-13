@@ -1,6 +1,5 @@
 # Dispersion process (uniform dispersion)
-#change the name of this function: SCA model
-sca_model <- function(x, alpha, beta, gamma1, gamma2, phi, rho, xi){
+sca_model <- function(x, alpha, beta, gamma1, gamma2, phi, rho, xi){ #x is a dataframe
   w <- incl_wgt(x)
   d <- density_rel_diff(x)
   incl_prob <- (w^alpha * d / (1 + w^alpha))^beta
@@ -11,19 +10,21 @@ sca_model <- function(x, alpha, beta, gamma1, gamma2, phi, rho, xi){
     #flipping coin on cells
     incl_index[i] <- rbinom(1, size = 1, prob = incl_prob[i])} 
   
-  if (sum(incl_index) == 0) {x_update <- x  #if all 0s, no spreading
+  if (sum(incl_index) == 0) {x_update <- x  #if all 0s, no dispersion
   } else {
     x$index <- incl_index
-    temp <- filter(x, index == 1) #only include certain cells
+    temp <- filter(x, index == 1) #only include selected cells
     avg <- mean(temp$density)
-    # contributing cells, lose population
+    # contributing cells, lose pop density
     temp_high <- temp[temp$density >= avg, ] 
-    # non-contributing cells, receive population
+    # non-contributing cells, receive pop density
     temp_low <- temp[temp$density < avg, ]
     N <- nrow(temp)
-    #population available to be redistributed
+    #pop density available to be redistributed
     pop_redistr <- gamma1 * sum(temp_high$density - avg)
+    #temporary non-contributing cells receive pop density
     temp_low$density <- with(temp_low, density + gamma2 * pop_redistr / N)
+    #survival prob for non-contributing cells
     land_prob <- phi + rho * atan(xi * temp_low$density)
     for (h in seq_along(land_prob)){
       land_index[h] <- rbinom(1, size = 1, prob = land_prob[h])
