@@ -5,7 +5,6 @@
 # The number of neighbors in a two-cell radius is 17.
 # The indexes depends on whether the column number is even or odd.
 
-
 #-------------------------------------------------------------------------------
 #mini-clusters for each cell
 #extended clusters for a group of cells
