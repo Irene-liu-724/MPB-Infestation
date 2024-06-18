@@ -1,0 +1,97 @@
+#different initial
+library(tidyverse)
+library(ggplot2)
+library(gganimate)
+library(gifski)
+library(transformr)
+library(RColorBrewer)
+library(ggthemes)
+library(paletteer)
+library(cowplot)
+library(ggforce)
+
+source("create_cluster.R")
+source("Macroscale_dispersion.R")
+source("Birth_death_process_1.R")
+
+#initial pattern 1
+n <- 50
+initial.pattern1 <- data.frame(expand.grid(row = 1:n, col = 1:n),
+                              density = c(rep(0,50*21), 
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.7, rep(0,24),
+                                          rep(0,22), 0.8, 0.7, 0.6, 0.1, 0.8, 0.1, rep(0,22),
+                                          rep(0,21), 0.7, 0, 0.8, 0.7, 0.6, 0.4, 0.2, rep(0,22),
+                                          rep(0,20), 0.2, 0.7, rep(0.8, 6), rep(0, 22),
+                                          rep(0,22), 0.8, 0.7, 0.6, 0.1, 0.8, rep(0,23),
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.7, rep(0,24),
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.7, rep(0,24),
+                                          rep(0,50*22)))
+
+#Initial pattern 2
+n <- 50
+initial.pattern2 <- data.frame(expand.grid(row = 1:n, col = 1:n),
+                              density = c(rep(0,50*22), 
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.7, 0.7, 0.6, rep(0,22),
+                                          rep(0,22), 0.8, 0.7, 0.6, 0.8, 0.8, 0.1, rep(0,22),
+                                          rep(0,22), 0.8, 0.7, 0.6, rep(0,25),
+                                          rep(0,22), 0.6, 0.5, 0.4, rep(0,25),
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.2, rep(0,24),
+                                          rep(0,23), 0.5, 0.7, 0.7, 0.6, 0.5, rep(0,22),
+                                          rep(0,50*22)))
+
+# Initial pattern 3
+n <- 50
+initial.pattern3 <- data.frame(expand.grid(row = 1:n, col = 1:n),
+                              density = c(rep(0,50*21), 
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.7, rep(0.4, 6), rep(0,18),
+                                          rep(0,22), 0.8, 0.7, 0.6, rep(0.2, 5), rep(0,20),
+                                          rep(0,21), 0.7, 0.3, 0.4, 0.3, 0.2, 0.2, 0.2, rep(0,22),
+                                          rep(0,20), 0.2, 0.7, rep(0.2, 6), rep(0, 22),
+                                          rep(0,22), 0.8, 0.4, 0.3, 0.2, rep(0,24),
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.2, rep(0,24),
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.2, rep(0,24),
+                                          rep(0,50*22)))
+
+#progression of the model
+progression <- function(x, n_x,
+                        birth_rate, death_rate, tau, capacity, incell_rep,
+                        alpha, beta, gamma1, gamma2, phi, rho, xi,
+                        t_star){
+  pb <- txtProgressBar(min = 0, max = t_star, initial = 0, style = 3)
+  t <- 0
+  dat <- data.frame(x, time = t)
+  while (t <= t_star) {
+    t <- t + 1
+    setTxtProgressBar(pb, t + 1)
+    #set up extended cluster for damaged cells
+    cluster <- ext.cluster(x)
+    #birth-death process
+    x_temp <- birth_death_process(cluster, birth_rate = birth_rate, death_rate = death_rate,
+                                  tau = tau, capacity = capacity, incell_rep = incell_rep)
+    #dispersal
+    x_temp <- sca_model(x_temp, alpha = alpha, beta = beta, gamma1 = gamma1,
+                                gamma2 = gamma2, phi = phi, rho = rho, xi = xi)
+    #remove auxiliary cells
+    table_temp <- filter(x_temp, row %in% seq(1, n_x, 1) & col %in% seq(1, n_x, 1))
+    #complete the grid
+    if (nrow(table_temp) != n_x * n_x){
+      table <- complete(table_temp, row = seq(1, n_x, 1), col = seq(1, n_x, 1),
+                        fill = list(density = 0))
+    } else {table <- table_temp}
+    dat_temp <- cbind(table, time = t)
+    dat <- rbind(dat, dat_temp)
+    
+    if(sum(dat_temp$density) == 0) {
+      print(paste("All densities are zero, stop at time:", t))
+      break
+    } else { x <- table_temp}
+  }
+  return(dat)
+}
+
+end1 <- progression(x = initial.pattern1, n_x = n, birth_rate = 1, death_rate = 0.4, tau = 100, capacity = 100, incell_rep = 20, alpha = 1,
+                    beta = 1, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 120)
+end2 <- progression(x = initial.pattern2, n_x = n, birth_rate = 1, death_rate = 0.4, tau = 100, capacity = 100, incell_rep = 20, alpha = 1,
+                    beta = 1, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 120)
+end3 <- progression(x = initial.pattern3, n_x = n, birth_rate = 1, death_rate = 0.4, tau = 100, capacity = 100, incell_rep = 20, alpha = 1,
+                    beta = 1, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 120)
