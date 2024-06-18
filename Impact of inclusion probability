@@ -63,8 +63,8 @@ progression <- function(x, n_x,
 }
 
 end1 <- progression(x = initial.pattern, n_x = n, birth_rate = 1, death_rate = 0.2, tau = 100, capacity = 100, incell_rep = 20, alpha = 1,
-                    beta = 0.2, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 120)
+                    beta = 0.2, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 50)
 end2 <- progression(x = initial.pattern, n_x = n, birth_rate = 1, death_rate = 0.2, tau = 100, capacity = 100, incell_rep = 20, alpha = 1,
-                    beta = 1, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 120)
+                    beta = 1, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 50)
 end3 <- progression(x = initial.pattern, n_x = n, birth_rate = 1, death_rate = 0.2, tau = 100, capacity = 100, incell_rep = 20, alpha = 1,
-                    beta = 2, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 120)
+                    beta = 2, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 50)
