@@ -59,7 +59,16 @@ density_rel_diff <- function(x) { # input x is a dataframe
   return(d)
 }
 
-# Dispersion process (uniform dispersion)
+#Dispersion process (uniform dispersion)
+#x: dataframe of the cell indexes and densities
+#alpha: parameter in the inclusion probability
+#beta: parameter in the inclusion probability
+#gamma1: percentage of population density to be dispersed
+#gamma2: percentage of population density to be accepted
+#phi: parameter in the survival probability
+#rho: parameter in the survival probability
+#xi: parameter in the survival probability
+
 sca_model <- function(x, alpha, beta, gamma1, gamma2, phi, rho, xi){ #x is a dataframe
   w <- incl_wgt(x)
   d <- density_rel_diff(x)
