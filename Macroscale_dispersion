@@ -65,7 +65,7 @@ sca_model <- function(x, alpha, beta, gamma1, gamma2, phi, rho, xi){ #x is a dat
   d <- density_rel_diff(x)
   incl_prob <- (w^alpha * d / (1 + w^alpha))^beta
   incl_index <- vector()
-  land_index <- vector()
+  surv_index <- vector()
   
   for (i in seq_along(incl_prob)){
     #flipping coin on cells
@@ -86,13 +86,13 @@ sca_model <- function(x, alpha, beta, gamma1, gamma2, phi, rho, xi){ #x is a dat
     #temporary non-contributing cells receive pop density
     temp_low$density <- with(temp_low, density + gamma2 * pop_redistr / N)
     #survival prob for non-contributing cells
-    land_prob <- phi + rho * atan(xi * temp_low$density)
-    for (h in seq_along(land_prob)){
-      land_index[h] <- rbinom(1, size = 1, prob = land_prob[h])
+    surv_prob <- phi + rho * atan(xi * temp_low$density)
+    for (h in seq_along(surv_prob)){
+      surv_index[h] <- rbinom(1, size = 1, prob = surv_prob[h])
     }
-    temp_low$land <- land_index
-    temp_low$density <- ifelse(temp_low$land == 0, 0, temp_low$density)
-    temp_low <- select(temp_low, -land)
+    temp_low$surv <- surv_index
+    temp_low$density <- ifelse(temp_low$surv == 0, 0, temp_low$density)
+    temp_low <- select(temp_low, -surv)
     temp_high$density <- with(temp_high, 
                               density - gamma1 * (density - avg) + pop_redistr / N)
     #updated cell density
@@ -152,7 +152,7 @@ sca_model_dir <- function(x, direction, dir_prob, alpha, beta, gamma1, gamma2, p
   dir_coef <- directional_move(x, direction = direction, dir_prob = dir_prob)
   incl_prob <- (w^alpha * d / (1 + w^alpha))^beta * dir_coef
   incl_index <- vector()
-  land_index <- vector()
+  surv_index <- vector()
   
   for (i in seq_along(incl_prob)){
     #flipping coin on cells
@@ -171,13 +171,13 @@ sca_model_dir <- function(x, direction, dir_prob, alpha, beta, gamma1, gamma2, p
     #pop density available to be redistributed
     pop_redistr <- gamma1 * sum(temp_high$density - avg)
     temp_low$density <- with(temp_low, density + gamma2 * pop_redistr / N)
-    land_prob <- phi + rho * atan(xi * temp_low$density)
-    for (h in seq_along(land_prob)){
-      land_index[h] <- rbinom(1, size = 1, prob = land_prob[h])
+    surv_prob <- phi + rho * atan(xi * temp_low$density)
+    for (h in seq_along(surv_prob)){
+      surv_index[h] <- rbinom(1, size = 1, prob = surv_prob[h])
     }
-    temp_low$land <- land_index
-    temp_low$density <- ifelse(temp_low$land == 0, 0, temp_low$density)
-    temp_low <- select(temp_low, -land)
+    temp_low$surv <- surv_index
+    temp_low$density <- ifelse(temp_low$surv == 0, 0, temp_low$density)
+    temp_low <- select(temp_low, -surv)
     temp_high$density <- with(temp_high, 
                               density - gamma1 * (density - avg) + pop_redistr / N)
     #updated cell density
