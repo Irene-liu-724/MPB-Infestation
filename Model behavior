@@ -47,7 +47,7 @@ progression <- function(x, n_x,
     x_temp <- birth_death_process(cluster, birth_rate = birth_rate, death_rate = death_rate,
                                   tau = tau, capacity = capacity, incell_rep = incell_rep)
     #dispersal
-    x_temp <- dispersal_process(x_temp, alpha = alpha, beta = beta, gamma1 = gamma1,
+    x_temp <- sca_model(x_temp, alpha = alpha, beta = beta, gamma1 = gamma1,
                                 gamma2 = gamma2, phi = phi, rho = rho, xi = xi)
     #remove auxiliary cells
     table_temp <- filter(x_temp, row %in% seq(1, n_x, 1) & col %in% seq(1, n_x, 1))
