@@ -67,3 +67,8 @@ end2 <- progression(x = initial.pattern, n_x = n, birth_rate = 1, death_rate = 0
                     beta = 1, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 120)
 end3 <- progression(x = initial.pattern, n_x = n, birth_rate = 1, death_rate = 0.8, tau = 100, capacity = 100, incell_rep = 20, alpha = 1,
                     beta = 1, gamma1 = 0.8, gamma2 = 0.8, phi = 1/3, rho = 1/3, xi = 1, t_star = 120)
+
+#periodic bdp
+source("Birth_death_process_1.R")
+end4 <- progression(x = initial.pattern,  n_x = n, birth_rate = 1, death_rate = 0.5, tau = 100, capacity = 100, incell_rep = 20, alpha = 1,
+                    beta = 1, gamma1 = 0.4, gamma2 = 0.4, phi = 1/6, rho = 1/6, xi = 1, t_star = 60)
