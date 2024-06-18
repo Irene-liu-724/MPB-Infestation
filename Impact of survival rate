@@ -1,4 +1,4 @@
-#same initial, different endings
+
 library(tidyverse)
 library(ggplot2)
 library(gganimate)
