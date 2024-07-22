@@ -30,8 +30,8 @@ initial.pattern <- data.frame(expand.grid(row = 1:n, col = 1:n),
                                           #rep(0,22), 0.6, 0.5, 0.4, 0.2, rep(0,24),
                                           rep(0,50*21)))
 
-#progression of the model
-progression <- function(x, n_x,
+#dispersion process
+dispersion <- function(x, n_x,
                         birth_rate, death_rate, tau, capacity, incell_rep,
                         alpha, beta, gamma1, gamma2, phi, rho, xi,
                         t_star){
@@ -46,7 +46,7 @@ progression <- function(x, n_x,
     #birth-death process
     x_temp <- birth_death_process(cluster, birth_rate = birth_rate, death_rate = death_rate,
                                   tau = tau, capacity = capacity, incell_rep = incell_rep)
-    #dispersal
+    #dispersion
     x_temp <- sca_model(x_temp, alpha = alpha, beta = beta, gamma1 = gamma1,
                                 gamma2 = gamma2, phi = phi, rho = rho, xi = xi)
     #remove auxiliary cells
@@ -67,7 +67,7 @@ progression <- function(x, n_x,
   return(dat)
 }
 
-end <- progression(x = initial.pattern,
+end <- dispersion(x = initial.pattern,
                     n_x = n,
                     birth_rate = 1,
                     death_rate = 0.4,
@@ -168,21 +168,21 @@ table_ncell <- end %>%
   summarise(ncell = n()) %>%
   mutate(radius = sqrt(ncell * 6 * sqrt(3)/pi)) 
 
-dispersal_rate <- diff(table_ncell$radius)
-rate_dat <- data.frame(rate = dispersal_rate,
-                       time = seq(1:length(dispersal_rate)))
+dispersion_rate <- diff(table_ncell$radius)
+rate_dat <- data.frame(rate = dispersion_rate,
+                       time = seq(1:length(dispersion_rate)))
 #velocity plot
 ggplot(data = rate_dat, aes(x = time, y = rate)) +
   geom_point(color = "#f16c23", size = 3) +
   geom_line(color = "#f16c23", linewidth = 1) +
-  geom_hline(yintercept = mean(dispersal_rate), linetype=5, 
+  geom_hline(yintercept = mean(dispersion_rate), linetype=5, 
              color = "black", linewidth = 0.6) +
   xlab("Time") +
   ylab("Velocity of dispersion") +
   ylim(-0.8, 1.5) +
   theme_setting
 #acf plot of dispersion velocity
-x <- dispersal_rate
+x <- dispersion_rate
 #x <- x - mean(x)
 #acf plot
 ts.acf <- acf(x, plot=F)
