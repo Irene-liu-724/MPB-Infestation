@@ -1,0 +1,75 @@
+library(tidyverse)
+library(ggplot2)
+library(gganimate)
+library(gifski)
+library(transformr)
+library(RColorBrewer)
+library(ggthemes)
+library(paletteer)
+library(cowplot)
+library(ggforce)
+
+source("create_cluster.R")
+source("Macroscale_dispersion.R")
+source("Birth_death_process_3.R")
+
+#initial pattern
+n <- 50
+initial.pattern1 <- data.frame(expand.grid(row = 1:n, col = 1:n),
+                              density = c(rep(0,50*21), 
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.7, rep(0,24),
+                                          rep(0,22), 0.8, 0.7, 0.6, 0.1, 0.8, 0.1, rep(0,22),
+                                          rep(0,21), 0.7, 0, 0.8, 0.7, 0.6, 0.4, 0.2, rep(0,22),
+                                          rep(0,20), 0.2, 0.7, rep(0.8, 6), rep(0, 22),
+                                          rep(0,22), 0.8, 0.7, 0.6, 0.1, 0.8, rep(0,23),
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.7, rep(0,24),
+                                          rep(0,22), 0.6, 0.5, 0.4, 0.7, rep(0,24),
+                                          rep(0,50*22)))
+
+#dispersion process
+dispersion <- function(x, n_x,
+                        b0, b11, b12, d0, d11, d12, f1, f2, n_cycle, t_star, p, tau, capacity, incell_rep, t_epi,
+                        alpha, beta, gamma1, gamma2, phi, rho, xi){
+  pb <- txtProgressBar(min = 0, max = t_star, initial = 0, style = 3)
+  t <- 0
+  dat <- data.frame(x, time = t)
+  while (t <= t_star) {
+    t <- t + 1
+    setTxtProgressBar(pb, t + 1)
+    #set up extended cluster for damaged cells
+    cluster <- ext.cluster(x)
+    if (t <= t_epi){
+      x_temp <- birth_death_process(cluster, b0 = b0, b1 = b11, d0 = d0, d1 = d11,
+                                    f1 = f1, f2 = f2, n_cycle = n_cycle, t = t,
+                                    t_star = t_star, 
+                                    p = p, capacity = capacity, incell_rep = incell_rep)
+    }else{
+      x_temp <- birth_death_process(cluster, b0 = b0, b1 = b12, d0 = d0, d1 = d12,
+                                    f1 = f1, f2 = f2, n_cycle = n_cycle, t = t,
+                                    t_star = t_star, 
+                                    p = p, capacity = capacity, incell_rep = incell_rep)
+    }
+    #dispersion
+    x_temp <- sca_model(x_temp, alpha = alpha, beta = beta, gamma1 = gamma1,
+                                gamma2 = gamma2, phi = phi, rho = rho, xi = xi)
+    #remove auxiliary cells
+    table_temp <- filter(x_temp, row %in% seq(1, n_x, 1) & col %in% seq(1, n_x, 1))
+    #complete the grid
+    if (nrow(table_temp) != n_x * n_x){
+      table <- complete(table_temp, row = seq(1, n_x, 1), col = seq(1, n_x, 1),
+                        fill = list(density = 0))
+    } else {table <- table_temp}
+    dat_temp <- cbind(table, time = t)
+    dat <- rbind(dat, dat_temp)
+    
+    if(sum(dat_temp$density) == 0) {
+      print(paste("All densities are zero, stop at time:", t))
+      break
+    } else { x <- table_temp}
+  }
+  return(dat)
+}
+
+end <- dispersion(x = initial.pattern, n_x = n, b0 = 0.8, b11 = 0.2, b12 = 0.5, d0 = 0.5, d11 = 0.4, d12 = 0.2, f1 = 0.5, f2 = 0.9, n_cycle = 6, t_star = 120, p = 10, 
+                  tau = 100, capacity = 100, incell_rep = 20, t_epi = 60, 
+                  alpha = 1, beta = 1, gamma1 = 0.5, gamma2 = 0.5, phi = 1/6, rho = 1/6, xi = 1)
