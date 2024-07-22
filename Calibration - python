@@ -1,0 +1,94 @@
+import numpy as np
+import bet.calculateP.calculateR as calculateR
+import bet.sample as samp
+import bet.sampling.basicSampling as bsam
+import matplotlib.pyplot as plt
+from scipy.stats import beta
+from scipy.stats import norm
+from scipy.stats import uniform
+
+#Parameter domain
+# gamma1
+gamma11 = 0.6
+gamma12 = 1
+# phi
+phi1 = 1/6
+phi2 = 5/6
+
+#input samples
+input_samples = samp.sample_set(2)
+# input_samples = samp.sample_set(input_sample_values)
+input_samples.set_domain(np.array([[gamma11, gamma12], [phi1, phi2]]))
+
+# Uniform parameter input samples
+input_sample_values = np.genfromtxt("uniform_par_values.csv", delimiter = ",", 
+                                    skip_header = 1)
+
+input_samples.set_values(input_sample_values)
+
+# Output samples
+output_sample_values =  np.genfromtxt("calibration_comp.csv", delimiter = ",", 
+                                      skip_header = 1)
+output_samples = samp.sample_set(1)
+output_samples.set_values(output_sample_values)
+
+disc_predict = samp.discretization(input_samples, output_samples)
+
+obs_samples = np.genfromtxt("BIP_comp.csv", delimiter = ",", 
+                            skip_header = 1)
+
+
+obs_data = samp.sample_set_base(1)
+obs_data.set_values(obs_samples)
+
+
+disc_predict.set_output_observed_set(obs_data)
+
+calculateR.invert_to_kde(disc_predict)
+
+plt.rcParams.update({'font.size': 22})
+plt.rcParams.update({'axes.linewidth': 2})
+x_min = 0.5
+x_max = 1.1
+x = np.linspace(x_min, x_max, 1000)
+x2_min = 0
+x2_max = 1
+x2 = np.linspace(x2_min - 0.01, x2_max + 0.01, 1000)
+
+fig = plt.figure(figsize=(10, 10))
+mar = disc_predict.get_input_sample_set().marginal_pdf(x, 0)
+plt.plot(x, mar, linewidth=4, linestyle='dashed', label="BIP solution")
+plt.xlabel("$\gamma_1$")
+plt.ylabel("Marginal density")
+plt.legend(fontsize=16)
+plt.show()
+fig.savefig('ex1_comp_m1.pdf')
+
+fig = plt.figure(figsize=(10, 10))
+mar = disc_predict.get_input_sample_set().marginal_pdf(x2, 1)
+plt.plot(x2, mar, linewidth=4, linestyle='dashed', label="BIP solution")
+plt.axvline(x = 0.26, color = "red") #peak
+plt.axvline(x = 0.74, color = "red") #peak
+plt.xlabel("$\phi$")
+plt.ylabel("Marginal density")
+plt.legend(fontsize=16)
+plt.show()
+fig.savefig('ex1_comp_m2.pdf')
+
+fig = plt.figure(figsize=(10, 7))
+weights = input_samples.get_weights()
+import matplotlib.tri as tri
+x = input_sample_values[:,0]
+y = input_sample_values[:,1]
+z = weights
+plt.tricontour(x, y, z, 20, linewidths=0, colors='k')
+tcf = plt.tricontourf(x, y, z, 20, cmap = "YlOrRd")
+fig.colorbar(tcf)
+#plt.legend()
+plt.xlabel("$\gamma_1$")
+plt.ylabel("$\phi$")
+#plt.title("Average N Cells")
+plt.xlim((gamma11, gamma12))
+plt.ylim((phi1, phi2))
+plt.show()
+fig.savefig('ex1_comp_c.pdf')
