@@ -1,3 +1,7 @@
+#need to create input samples for model calibration
+#use uniform parameter values and corresponding model output as the input samples in the model calibration
+#use chosen parameter values and corresponding model output as the output samples in the model calibration
+
 import numpy as np
 import bet.calculateP.calculateR as calculateR
 import bet.sample as samp
