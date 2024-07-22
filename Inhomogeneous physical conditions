@@ -13,8 +13,8 @@ source("create_cluster.R")
 source("Macroscale_dispersion.R")
 source("Birth_death_process_1.R")
 
-#progression of the model
-progression <- function(x, n_x,
+#dispersion process
+dispersion <- function(x, n_x,
                         birth_rate, death_rate, tau, capacity, incell_rep,
                         alpha, beta, gamma1, gamma2, phi, rho, xi,
                         t_star){
@@ -29,7 +29,7 @@ progression <- function(x, n_x,
     #birth-death process
     x_temp <- birth_death_process(cluster, birth_rate = birth_rate, death_rate = death_rate,
                                   tau = tau, capacity = capacity, incell_rep = incell_rep)
-    #dispersal
+    #dispersion
     x_temp <- sca_model(x_temp, alpha = alpha, beta = beta, gamma1 = gamma1,
                                 gamma2 = gamma2, phi = phi, rho = rho, xi = xi)
     #remove auxiliary cells
@@ -83,7 +83,7 @@ initial.pattern <- data.frame(expand.grid(row = 1:n, col = 1:n),
                                           #rep(0,22), 0.6, 0.5, 0.4, 0.7, rep(0,24),
                                           rep(0,50*40)))
 
-lake <- progression(x = initial.pattern, n_x = n, birth_rate = 1, death_rate = 0.4, tau = 100, capacity = 100, incell_rep = 20,
+lake <- dispersion(x = initial.pattern, n_x = n, birth_rate = 1, death_rate = 0.4, tau = 100, capacity = 100, incell_rep = 20,
                     alpha = 1, beta = 1, gamma1 = 0.6, gamma2 = 0.6, phi = 1/3, rho = 1/3, xi = 1, t_star = 550)
 
 #bridge
@@ -118,7 +118,7 @@ initial.pattern <- data.frame(expand.grid(row = 1:n, col = 1:n),
                                           #rep(0,22), 0.6, 0.5, 0.4, 0.7, rep(0,24),
                                           #rep(0,22), 0.6, 0.5, 0.4, 0.7, rep(0,24),
                                           rep(0,50*40)))
-bridge <- progression(x = initial.pattern, n_x = n, birth_rate = 1, death_rate = 0.4, tau = 100, capacity = 100, incell_rep = 20,
+bridge <- dispersion(x = initial.pattern, n_x = n, birth_rate = 1, death_rate = 0.4, tau = 100, capacity = 100, incell_rep = 20,
                     alpha = 1, beta = 1, gamma1 = 0.6, gamma2 = 0.6, phi = 1/3, rho = 1/3, xi = 1, t_star = 550)
 
 
