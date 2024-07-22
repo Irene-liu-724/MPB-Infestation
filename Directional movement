@@ -42,7 +42,7 @@ dispersion <- function(x, n_x,
     #birth-death process
     x_temp <- birth_death_process(cluster, birth_rate = birth_rate, death_rate = death_rate,
                                   tau = tau, capacity = capacity, incell_rep = incell_rep)
-    #dispersal
+    #dispersion
     x_temp <- sca_model_dir(x_temp, direction = direction, dir_prob = dir_prob,
                                     alpha = alpha, beta = beta, gamma1 = gamma1,
                                     gamma2 = gamma2, phi = phi, rho = rho, xi = xi)
