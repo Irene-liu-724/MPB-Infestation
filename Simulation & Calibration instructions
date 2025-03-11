@@ -1,0 +1,124 @@
+The simulations and calibration are executed on the Compute Canada’s high-performance computation system. 
+
+Since each realization is independent of the other, and no effect is needed to communicate between the realizations, we use parallel computing to carry out the simulations simultaneously. When we investigate the evolutional patterns of two interaction neighbourhoods, we use apply functions in R to simulate the dispersion process for two groups at the same time.
+
+Simulation
+In the simulation studies, we set up a series of experiments to investigate the impacts of varying parameters such as birth-death process, spreading rate, survival rate, inclusion probability and survival probability. We simulate 50 realizations in each of these experiments. The quantitative statistics including the average cell density, average number of affected cells, and average complexity of the interaction neighbourhood are computed as the average of the output data. 
+
+Sample code for parallel computing:
+
+library(doParallel)
+nodeslist <- unlist(strsplit(Sys.getenv("NODESLIST"), split = " "))
+cl <- makeCluster(nodeslist, type="PSOCK")
+registerDoParallel(cl)
+n_replicates_val <- 50
+#The parameter values are specified in each code file.
+output_dat <- foreach(i = 1: n_replicates_val, 
+                    .packages = "tidyverse",
+                    .multicombine = TRUE)%dopar%{
+                    output <- progression(x = initial_pattern,
+                                          n_x = n,
+                                          birth_rate = birth_rate_val,
+                                          death_rate = death_rate_val,
+                                          tau = tau_val, 
+                                          capacity = capacity_val,
+                                          incell_rep = incell_rep_val,
+                                          alpha = alpha_val,
+                                          beta = beta_val,
+                                          gamma1 = gamma1_val,
+                                          gamma2 = gamma2_val,
+                                          phi = phi_val,
+                                          rho = rho_val,
+                                          xi = xi_val,
+                                          t_star = t_star_val)
+                    return(output)
+}
+
+stopCluster(cl)
+
+save(output_dat, file = "output_dat.RData")
+------------------------------------------------------------------------------------------------------------------------------
+Calibration using simulated data
+
+We specify distributions for the parameters to be calibrated, simulate the model by random sampling the distributions to generate data, “forget” the initial distributions for the parameters, then use the Bayesian calibration technique to calibrate the parameters. 
+
+We assume a normal data generating distribution N((0.7, 1/3), 0.05^2) that is centered at 0.7 for gamma1 and phi = 1/3 . We generate 1000 samples of gamm1 and phi and compute 50 solutions for each sample, then compute the average statistics from the resulting dispersion patterns. 
+
+We consider four statistics computed from dispersion patterns for the inversion:
+1. Average number of affected cells;
+2. Average cell density;
+3. Complexity of dispersion pattern;
+4. Derivative of a fitted curve for complexity.
+
+Due to the computational limits of the Compute Canada clusters and to improve computational efficiency, we split the 1000 samples into five groups with 200 samples in each. The split does not affect the results because these samples are independent of each other. 
+
+We first generate the parameter values based on the speicified distribution:
+set.seed(seed_number)
+n_par_val <- 200
+n_replicates_val <- 50
+
+par_data <- as.data.frame(mvrnorm(n = n_par_val,
+                                        mu = c(0.8, 0.8),
+                                        Sigma=matrix(c((0.4/6)^2, 0, 0, (0.4/6)^2), ncol=2)))
+
+par_d <- data.frame(gamma1 = rep(round(bivariate_data_1$V1, 2), each = n_replicates_val),
+                    gamma2 = rep(round(bivariate_data_1$V2, 2), each = n_replicates_val))
+
+The five seed numbers we used are 19970813, 19880531, 19710624, 19881227 and 19830207. 
+
+Sample code for parallel computing:
+library(doParallel)
+nodeslist <- unlist(strsplit(Sys.getenv("NODESLIST"), split = " "))
+cl <- makeCluster(nodeslist, type="PSOCK")
+registerDoParallel(cl)
+
+#Simulation parameters
+#Micro scale
+birth_rate_val <- 1
+death_rate_val <- 0.2
+tau_val <- 100
+capacity_val <- 100
+incell_rep_val <- 20
+#Macro scale
+alpha_val <- 1
+beta_val <- 1
+phi_val <- 1/3
+rho_val <- 1/3
+xi_val <- 1
+t_star_val <- 32 
+
+output_dat <- foreach(gamma1_val = par_d$gamma1, gamma2_val = par_d$gamma2, 
+                    .packages = "tidyverse",
+                    .multicombine = TRUE)%dopar%{
+                    output <- progression(x = initial_pattern,
+                                          n_x = n,
+                                          birth_rate = birth_rate_val,
+                                          death_rate = death_rate_val,
+                                          tau = tau_val, 
+                                          capacity = capacity_val,
+                                          incell_rep = incell_rep_val,
+                                          alpha = alpha_val,
+                                          beta = beta_val,
+                                          gamma1 = gamma1_val,
+                                          gamma2 = gamma2_val,
+                                          phi = phi_val,
+                                          rho = rho_val,
+                                          xi = xi_val,
+                                          t_star = t_star_val)
+                    return(output)
+}
+
+stopCluster(cl)
+save(output_dat, file = "output_dat.RData")
+save(par_data, file = "par_data.RData")
+
+The output_dat is used to compute the quantitative statistics which is used as the output_samples_values in the Calibration-python file.
+library(parallel)
+nodeslist <- unlist(strsplit(Sys.getenv("NODESLIST"), split = " "))
+cl <- makeCluster(nodeslist, type="PSOCK")
+clusterExport(cl, "mini.cluster")
+clusterEvalQ(cl, {library(tidyverse)})
+comp_norm_1 <- parLapply(cl, cal_norm_1, fun = complex_fun)
+n_norm_1 <- parLapply(cl, cal_norm_1, fun = count_affected_cells)
+avgden_norm_1 <- parLapply(cl, cal_norm_1, function(x) sum(x$density)/900)
+stopCluster(cl)
